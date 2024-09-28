@@ -1,0 +1,2 @@
+export const FILE_LIST_DATA = 'FILE_LIST_DATA';
+export const UPDATE_FILE_LIST_DATA = 'UPDATE_FILE_LIST_DATA';
