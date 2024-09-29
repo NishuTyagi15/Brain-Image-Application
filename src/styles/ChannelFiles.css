@@ -1,0 +1,46 @@
+.file-main {
+    width: 100%;
+    padding: 8px;
+    font-family: sans-serif !important;
+    font-size: 14px !important;
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.file-main .MuiCheckbox-root {
+    padding-right: 14px;
+}
+
+.file-details {
+    display: flex;
+    align-items: center;
+}
+
+.icon-button {
+    color: #007BFF;
+    transition: transform 0.2s;
+}
+
+.icon-button:hover {
+    transform: scale(1.1);
+}
+
+.download-icon {
+    color: #4CAF50;
+}
+
+.preview-icon {
+    color: #2196F3;
+}
+
+.image-preview {
+    font-weight: 600 !important;
+    font-family: sans-serif !important;
+}
+
+.close-icon > svg {
+    color: darkgray;
+}

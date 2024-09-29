@@ -9,15 +9,21 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChannelFiles from './ChannelFiles';
 
-const SectionAccordion = ({ sectionNumber, channelData }) => (
+const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, selectedFiles }) => (
     <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography><strong>Section</strong> {sectionNumber}</Typography>
+            <Typography><strong>Section: {keyIndex + 1}</strong> {sectionNumber}</Typography>
         </AccordionSummary>
         <AccordionDetails>
             <Box>
                 {Object.keys(channelData).map((channelName) => (
-                    <ChannelFiles key={channelName} channelName={channelName} files={channelData[channelName].files} />
+                    <ChannelFiles
+                        key={channelName}
+                        channelName={channelName}
+                        files={channelData[channelName].files}
+                        onFileSelect={onFileSelect}
+                        selectedFiles={selectedFiles}
+                    />
                 ))}
             </Box>
         </AccordionDetails>

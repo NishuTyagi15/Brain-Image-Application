@@ -1,3 +1,20 @@
 .App {
-  text-align: center;
+  padding: 25px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(234, 228, 228);
+}
+
+::-webkit-scrollbar-thumb {
+  background: darkgray;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: darkgray;
 }

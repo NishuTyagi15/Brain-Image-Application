@@ -22,14 +22,16 @@ export const fetchFileList = async (continuationToken) => {
 
 
 
-export const fetchJobDetails = async () => {
-  const response = await axios.get('https://job-management-api.onrender.com/api/dashboard/summary');
+export const fetchDownloadUrl = async(file, zipStatus) => {
+  const response = await axios.get(`https://d7n70bd1mi.execute-api.us-east-1.amazonaws.com/sample/download/url?key=${file}&isZip=${zipStatus}`);
   console.log("nish response.data", response.data)
-  return response.data;
+  return response.data.data;
 }
 
-export const fetchJobPostingDetails = async () => {
-  const response = await axios.get('https://job-management-api.onrender.com/api/jobs/postings');
-  console.log("nish response.data11", response.data)
-  return response.data;
-}
+export const fetchPreview = async (previewUrl) => {
+  const response = await axios.get(
+    `https://47esi9z9a0.execute-api.us-east-1.amazonaws.com/downsample-dev/get-downsampled-image/${previewUrl}`, 
+    { responseType: 'arraybuffer' }
+  );
+  return response;
+};
