@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css'
-import FileListComponent from './components/FileListComponent';
+import FileListComponent from './components/FileComponent/FileListComponent';
 
 function App() {
   return (
