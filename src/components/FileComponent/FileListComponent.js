@@ -171,7 +171,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                         if (status.toLowerCase() === 'completed') {
                             handleSuccess();
                             setSnackbarMessage('Downloading started');
-                            
+
                             // Step 5: Download the zip file
                             const downloadLink = document.createElement('a');
                             const downloadUrl = await fetchDownloadUrl(key, true);
@@ -249,62 +249,65 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                 onClick={downloadSelectedFiles}
                 disabled={selectedFiles.length === 0 || downloading}
             >
-                <Download/> Convert to Zip And Download Selected Files
+                <Download /> Convert to Zip And Download Selected Files
             </button>
             {loading ? (
-                <p>Loading initial file list...</p>
+                <LinearProgress />
             ) : (
-                <>
-                    {Object.keys(fileGroups).map((projectID) => (
-                        <ProjectAccordion
-                            key={projectID}
-                            projectID={projectID}
-                            datasetData={fileGroups[projectID].datasets}
-                            selectedFiles={selectedFiles}
-                            handleFileSelection={handleFileSelection}
-                            onDatasetSelect={handleFileSelection}
-                        />
-                    ))}
-                    {fetchingMore && <p>Loading more files...</p>}
-                    {/* Pagination Button */}
-                    {continuationToken && !fetchingMore && (
-                        <button
-                            className='download-button'
-                            onClick={loadMoreFiles}
-                            disabled={fetchingMore}
-                            style={{ marginTop: '20px' }}
-                            endIcon={fetchingMore ? <CircularProgress size={20} color="inherit" /> : null}
-                        >
-                            {fetchingMore ? 'Loading...' : 'Load More Files'}
-                        </button>
-                    )}
-                </>
+                Object.keys(fileGroups).map((projectID) => (
+                    <ProjectAccordion
+                        key={projectID}
+                        projectID={projectID}
+                        datasetData={fileGroups[projectID].datasets}
+                        selectedFiles={selectedFiles}
+                        handleFileSelection={handleFileSelection}
+                        onDatasetSelect={handleFileSelection}
+                    />
+                ))
             )}
-
-            {/* Download Progress Dialog */}
-            <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    Download Progress
-                    <Tooltip title="Cancel download">
-                        <IconButton onClick={handleCancelDownload} style={{ float: 'right' }}>
-                            <Cancel />
-                        </IconButton>
-                    </Tooltip>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="h6" gutterBottom>
-                        Progress: {downloadProgress}%
-                    </Typography>
-                    <LinearProgress variant="determinate" value={downloadProgress} />
-                </DialogContent>
-            </Dialog>
-
-            {/* Snackbar for download status */}
-            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
-                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {fetchingMore && <CircularProgress />}
+            {!fetchingMore && continuationToken && (
+                <button
+                className='download-button'
+                onClick={loadMoreFiles}
+                disabled={fetchingMore}
+                style={{ marginTop: '20px' }}
+            >
+                Load More Files
+            </button>
+            )}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+            >
+                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
+            <Dialog
+                open={dialogOpen}
+                onClose={handleDialogClose}
+                aria-labelledby="download-dialog-title"
+            >
+                <DialogTitle id="download-dialog-title">Download Progress</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1">
+                        {downloading ? (
+                            <>
+                                Downloading... <strong>{downloadProgress}%</strong>
+                            </>
+                        ) : (
+                            'Your download has been completed or canceled.'
+                        )}
+                    </Typography>
+                    {downloading && (
+                        <Button onClick={handleCancelDownload} color="error" startIcon={<Cancel />}>
+                            Cancel Download
+                        </Button>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
@@ -313,9 +316,4 @@ const mapStateToProps = (state) => ({
     fileListData: state.fileListData,
 });
 
-const mapActionToProps = {
-    FileLists,
-    updateFileList,
-};
-
-export default connect(mapStateToProps, mapActionToProps)(FileListComponent);
+export default connect(mapStateToProps, { FileLists, updateFileList })(FileListComponent);
