@@ -9,9 +9,10 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChannelFiles from './ChannelFiles';
+import { connect } from 'react-redux';
+import { sectionSelectStatus } from '../../reduxStore/actions';
 
-const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, selectedFiles, disableChildren }) => {
-    const [disableChannels, setDisableChannels] = useState(false);
+const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, selectedFiles, datasetSelected, sectionSelectStatus }) => {
 
     const allFiles = Object.keys(channelData).flatMap(channelName => channelData[channelName].files);
 
@@ -22,10 +23,10 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
         const isChecked = event.target.checked;
 
         allFiles.forEach(file => {
-            onFileSelect(file, 'folder');
+            onFileSelect(file);
         });
 
-        setDisableChannels(isChecked);
+        sectionSelectStatus(isChecked);
     };
 
     return (
@@ -36,7 +37,7 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
                         checked={isSectionSelected}
                         onChange={handleSectionSelect}
                         onClick={(event) => event.stopPropagation()}
-                        disabled={disableChildren}
+                        disabled={datasetSelected}
                     />
                     <Typography>
                         <strong>Section: {keyIndex + 1}</strong> {sectionNumber}
@@ -52,7 +53,6 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
                             files={channelData[channelName].files}
                             onFileSelect={onFileSelect}
                             selectedFiles={selectedFiles}
-                            disableChildren={disableChannels}
                         />
                     ))}
                 </Box>
@@ -61,4 +61,8 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
     );
 };
 
-export default SectionAccordion;
+const mapStateToProps = (state) => ({
+    datasetSelected: state.datasetSelected,
+});
+
+export default connect(mapStateToProps, {sectionSelectStatus})(SectionAccordion);

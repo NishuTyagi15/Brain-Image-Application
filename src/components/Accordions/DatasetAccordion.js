@@ -9,9 +9,10 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SectionAccordion from './SectionAccordion';
+import { connect } from 'react-redux';
+import { datasetSelectionStatus } from '../../reduxStore/actions';
 
-const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFiles }) => {
-    const [disableChildren, setDisableChildren] = useState(false);
+const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFiles, datasetSelectionStatus, sectionSelected }) => {
 
     const allFilesInDataset = Object.keys(sectionData).flatMap(sectionNumber => {
         return Object.keys(sectionData[sectionNumber].channels).flatMap(channelName => {
@@ -29,11 +30,7 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
             onFileSelect(file, 'folder');
         });
 
-        setDisableChildren(isChecked);
-    };
-
-    const handleCheckboxClick = (event) => {
-        event.stopPropagation();
+        datasetSelectionStatus(isChecked)
     };
 
     return (
@@ -43,7 +40,8 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
                     <Checkbox
                         checked={isDatasetSelected}
                         onChange={handleDatasetSelect}
-                        onClick={handleCheckboxClick}
+                        onClick={(event) => event.stopPropagation()}
+                        disabled={sectionSelected}
                     />
                     <Typography><strong>Dataset:</strong> {datasetName}</Typography>
                 </div>
@@ -58,7 +56,6 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
                             channelData={sectionData[sectionNumber].channels}
                             onFileSelect={onFileSelect}
                             selectedFiles={selectedFiles}
-                            disableChildren={disableChildren}
                         />
                     ))}
                 </Box>
@@ -67,4 +64,8 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
     );
 };
 
-export default DatasetAccordion;
+const mapStateToProps = (state) => ({
+    sectionSelected: state.sectionSelected
+});
+
+export default connect(mapStateToProps, { datasetSelectionStatus })(DatasetAccordion);

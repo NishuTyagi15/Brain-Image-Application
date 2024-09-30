@@ -17,8 +17,9 @@ import { fetchDownloadUrl, fetchPreview } from '../../actions/Action';
 import '../../styles/ChannelFiles.css';
 import { splitFileString } from '../../utility/utils';
 import { OpenInNew } from '@mui/icons-material';
+import { connect } from 'react-redux';
 
-const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disableChildren }) => {
+const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, datasetSelected, sectionSelected }) => {
     const [previewImage, setPreviewImage] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
 
@@ -70,7 +71,7 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disable
                                     event.stopPropagation();
                                     onFileSelect(file);
                                 }}
-                                disabled={disableChildren}
+                                disabled={datasetSelected || sectionSelected}
                             />
                             <Typography>
                                 <strong>File:</strong> {secondPart}
@@ -120,17 +121,14 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disable
                         <img src={previewImage} alt="Preview" style={{ width: '100%', maxHeight: '550px', objectFit: 'contain' }} />
                     )}
                 </DialogContent>
-                {/* <DialogActions>
-                    <Button className='cancel-button' onClick={handleCloseDialog} color="primary">
-                        Cancel
-                    </Button>
-                    <Button className='enlarge-button' onClick={handleEnlarge} color="primary">
-                        Open In New Tab
-                    </Button>
-                </DialogActions> */}
             </Dialog>
         </div>
     );
 };
 
-export default ChannelFiles;
+const mapStateToProps = (state) => ({
+    datasetSelected: state.datasetSelected,
+    sectionSelected: state.sectionSelected
+});
+
+export default connect(mapStateToProps, {})(ChannelFiles);

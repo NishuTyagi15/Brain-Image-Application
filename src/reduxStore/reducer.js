@@ -1,8 +1,9 @@
-import { FILE_LIST_DATA, UPDATE_FILE_LIST_DATA } from "../utility/ActionConstants";
+import { DATA_SET_SELECTED, FILE_LIST_DATA, SECTION_SELECTED, UPDATE_FILE_LIST_DATA } from "../utility/ActionConstants";
 
 const initialState = {
     fileListData: [],
-    
+    datasetSelected: false,
+    sectionSelected: false
 };
 
 const dataReducer = (state = initialState, action) => {
@@ -15,7 +16,17 @@ const dataReducer = (state = initialState, action) => {
         case UPDATE_FILE_LIST_DATA:
             return {
                 ...state,
-                fileListData: [...state.fileListData, ...action.payload]
+                fileListData: action.payload
+            };
+        case DATA_SET_SELECTED:
+            return {
+                ...state,
+                datasetSelected: action.payload
+            };
+        case SECTION_SELECTED:
+            return {
+                ...state,
+                sectionSelected: action.payload
             };
         default:
             return state;
