@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
-import { Typography, Checkbox, IconButton, Tooltip, Dialog, DialogActions, DialogContent, DialogTitle, Button } from '@mui/material';
+import {
+    Typography,
+    Checkbox,
+    IconButton,
+    Tooltip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Button
+} from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import { fetchDownloadUrl, fetchPreview } from '../../actions/Action';
 import '../../styles/ChannelFiles.css';
+import { splitFileString } from '../../utility/utils';
 
 const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
     const [previewImage, setPreviewImage] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
 
-    // Function to split the file url into two parts
-    const splitFileString = (file) => {
-        const lastSlashIndex = file.lastIndexOf('/');
-        const firstPart = file.substring(0, lastSlashIndex);
-        const secondPart = file.substring(lastSlashIndex + 1);
-        return { firstPart, secondPart };
-    };
-
-    // Function to handle single file download
     const handleDownload = async (file) => {
         const downloadUrl = await fetchDownloadUrl(file, false);
         const url = downloadUrl.url;
@@ -30,29 +32,22 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
         document.body.removeChild(link);
     };
 
-    // Function to handle file preview
     const handlePreview = async (file) => {
         const { firstPart, secondPart } = splitFileString(file);
         const previewUrl = `${firstPart}/downsampled/downsampled-${secondPart}`;
         const previewResponse = await fetchPreview(previewUrl);
-
-        // Convert arraybuffer to Blob
         const blob = new Blob([previewResponse.data], { type: 'image/png' });
         const imageUrl = URL.createObjectURL(blob);
-
-        // Set the image URL in state and open the dialog
         setPreviewImage(imageUrl);
         setOpenDialog(true);
     };
 
-    // Function to handle the enlarge (open in new tab) action
     const handleEnlarge = () => {
         if (previewImage) {
             window.open(previewImage, '_blank', 'noopener,noreferrer');
         }
     };
 
-    // Function to close the dialog
     const handleCloseDialog = () => {
         setOpenDialog(false);
         setPreviewImage(null);
@@ -65,13 +60,15 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
             </Typography>
             {files.map((file, index) => {
                 const { secondPart } = splitFileString(file);
-
                 return (
                     <div key={index} className='file-main'>
                         <div className='file-details'>
                             <Checkbox
                                 checked={selectedFiles.includes(file)}
-                                onChange={() => onFileSelect(file)}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onFileSelect(file);
+                                }}
                             />
                             <Typography>
                                 <strong>File:</strong> {secondPart}
@@ -116,7 +113,7 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
                         Cancel
                     </Button>
                     <Button className='enlarge-button' onClick={handleEnlarge} color="primary">
-                        Open In New Tab 
+                        Open In New Tab
                     </Button>
                 </DialogActions>
             </Dialog>

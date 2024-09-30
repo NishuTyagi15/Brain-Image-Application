@@ -44,3 +44,20 @@
 .close-icon > svg {
     color: darkgray;
 }
+
+.cancel-button, .enlarge-button {
+    border-radius: 4px !important;
+    margin: 0 5px 0 0 !important;
+    font-family: inherit !important;
+    color: #12809a !important;
+    cursor: pointer !important;
+    border: 1px solid darkgray !important;
+    padding: 8px 20px !important;
+}
+
+.enlarge-button {
+    margin: 0 24px 0 0 !important;
+    color: #fff !important;
+    background-color: #12809a !important;
+    border: 1px solid #12809a !important;
+}

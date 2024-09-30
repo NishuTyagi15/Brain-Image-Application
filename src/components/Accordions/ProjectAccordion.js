@@ -9,7 +9,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DatasetAccordion from './DatasetAccordion';
 
-const ProjectAccordion = ({ projectID, datasetData, selectedFiles, handleFileSelection }) => (
+const ProjectAccordion = ({ projectID, datasetData, selectedFiles, handleFileSelection, onDatasetSelect }) => (
     <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography><strong>Project:</strong> {projectID}</Typography>
@@ -23,6 +23,7 @@ const ProjectAccordion = ({ projectID, datasetData, selectedFiles, handleFileSel
                         sectionData={datasetData[datasetName].sections}
                         selectedFiles={selectedFiles}
                         onFileSelect={handleFileSelection}
+                        onDatasetSelect={onDatasetSelect}
                     />
                 ))}
             </Box>

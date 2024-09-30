@@ -1,26 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { fetchFileList } from '../actions/Action';
+import { cancelDownloading, fetchDownloadStatus, fetchDownloadUrl, fetchFileList, fetchZipDownloadEtag } from '../actions/Action';
 import { FileLists, updateFileList } from '../reduxStore/actions';
 import '../styles/FileListComponent.css';
 import ProjectAccordion from './Accordions/ProjectAccordion';
-import { Download } from '@mui/icons-material';
+import { Download, Cancel } from '@mui/icons-material';
+import { LinearProgress, Button, CircularProgress, Typography, Snackbar, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Alert } from '@mui/material';
+import { splitFileString } from '../utility/utils';
 
 const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     const [loading, setLoading] = useState(false);
     const [fetchingMore, setFetchingMore] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState([]); // State to track selected files
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [selectionType, setSelectionType] = useState('');
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [downloading, setDownloading] = useState(false);
+    const [continuationToken, setContinuationToken] = useState(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [refId, setRefId] = useState(null);
+    const [zipKey, setZipKey] = useState(null);
+
+    let pollingInterval;
 
     // Function to load more files using continuation token
-    const loadMoreFiles = async (token) => {
+    const loadMoreFiles = async () => {
+        setSelectedFiles([]);
+        if (!continuationToken) return;
+
         setFetchingMore(true);
         try {
-            const newList = await fetchFileList(token);
+            const newList = await fetchFileList(continuationToken);
             if (newList?.keys) {
                 updateFileList(newList.keys);
             }
             if (newList?.nextContinuationToken) {
-                loadMoreFiles(newList.nextContinuationToken);
+                setContinuationToken(newList.nextContinuationToken);
+            } else {
+                setContinuationToken(null);
             }
         } catch (error) {
             console.error('Error loading more files:', error);
@@ -36,7 +55,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
             const response = await fetchFileList();
             FileLists(response?.keys);
             if (response?.nextContinuationToken) {
-                loadMoreFiles(response.nextContinuationToken);
+                setContinuationToken(response.nextContinuationToken);
             }
         } catch (error) {
             console.error('Error fetching file list:', error);
@@ -87,7 +106,9 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     const fileGroups = groupFiles(fileListData || {});
 
     // Function to handle file selection
-    const handleFileSelection = (file) => {
+    const handleFileSelection = (file, type = '') => {
+        console.log("nish type", type)
+        setSelectionType(type)
         setSelectedFiles((prevSelectedFiles) =>
             prevSelectedFiles.includes(file)
                 ? prevSelectedFiles.filter((f) => f !== file)
@@ -97,20 +118,148 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
 
     // Function to download selected files
     const downloadSelectedFiles = async () => {
-        selectedFiles.forEach((file) => {
-            // For each selected file, initiate the download
-            const a = document.createElement('a');
-            a.href = `YOUR_API_ENDPOINT_OR_S3_PATH/${file}`; // Adjust this to your API or file storage URL
-            a.download = file;
-            a.click();
-        });
+        setDownloading(true);
+        setDownloadProgress(0);
+        setDialogOpen(true);
+    
+        let selectedFilesData = null;
+        let folderPrefix = null;
+        let zipFileName = `Sample-7569.zip`;
+    
+        // Step 1: Process based on selection type
+        if (selectionType === 'folder') {
+            selectedFilesData = splitFileString(selectedFiles[0]);
+            folderPrefix = selectedFilesData.firstPart;
+            console.log("Folder selected, folderPrefix:", folderPrefix);
+        } else {
+            selectedFilesData = selectedFiles;
+            console.log("Files selected:", selectedFilesData);
+        }
+    
+        try {
+            // Step 2: Call API to get etags for selected files or folders
+            const zipConversionResponse = await fetchZipDownloadEtag({
+                selectionType,
+                folderPrefix,
+                files: selectedFilesData,
+                zipFileName,
+            });
+    
+            console.log("nish refId", zipConversionResponse);
+    
+            // Step 3: If a direct download URL is provided in the response, download the file immediately
+            if (zipConversionResponse?.url) {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = zipConversionResponse.url;
+                downloadLink.download = zipFileName;
+                downloadLink.click();
+    
+                setSnackbarMessage('Download started');
+                setSnackbarSeverity('success');
+                setSnackbarOpen(true);
+                setDownloading(false);
+                setDialogOpen(false);
+            } else {
+                // Step 4: Polling for the zip conversion status if no direct URL is available
+                setRefId(zipConversionResponse.ref); // Set the refId for polling
+                pollingInterval = setInterval(async () => {
+                    try {
+                        const statusResponse = await fetchDownloadStatus(zipConversionResponse.ref);
+                        console.log("nish statusResponse", statusResponse);
+    
+                        const { uploadProgress, status, key } = statusResponse;
+                        setDownloadProgress(uploadProgress);
+                        setZipKey(key);
+    
+                        if (status.toLowerCase() === 'completed') {
+                            clearInterval(pollingInterval);
+                            setSnackbarMessage('Downloading started');
+                            setSnackbarSeverity('success');
+                            setSnackbarOpen(true);
+                            
+                            // Step 5: Download the zip file
+                            const downloadLink = document.createElement('a');
+                            const downloadUrl = await fetchDownloadUrl(key, true);
+                            downloadLink.href = downloadUrl.url;
+                            downloadLink.download = downloadUrl.key;
+                            downloadLink.click();
+                            setDownloading(false);
+                            setDialogOpen(false);
+                        } else if (status.toLowerCase() === 'not_found' || status.toLowerCase() === 'no_such_upload') {
+                            clearInterval(pollingInterval);
+                            console.error('Zip download failed');
+                            setDownloading(false);
+                            setSnackbarMessage('Downloading Failed');
+                            setSnackbarSeverity('error');
+                            setSnackbarOpen(true);
+                            setDialogOpen(false);
+                        }
+                    } catch (pollingError) {
+                        console.error('Error during polling:', pollingError);
+                        clearInterval(pollingInterval);
+                        setDownloading(false);
+                        setSnackbarMessage('Downloading Failed');
+                        setSnackbarSeverity('error');
+                        setSnackbarOpen(true);
+                        setDialogOpen(false);
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error during download:', error);
+            clearInterval(pollingInterval);
+            setDownloading(false);
+            setSnackbarMessage('Downloading Failed');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            setDialogOpen(false);
+        }
+        setSelectedFiles([]);
+    };    
+
+    // Cancel the download by calling the cancel API
+    const handleCancelDownload = async () => {
+        try {
+            const cancelDownload = await cancelDownloading(refId, zipKey);
+            console.log("nish cancelDownload", cancelDownload)
+            clearInterval(pollingInterval);
+            setSnackbarMessage('Downloading Canceled');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+            setDownloading(false);
+            setDialogOpen(false);
+            return false;
+        } catch (error) {
+            console.error('Error canceling download:', error);
+            setSnackbarMessage('Cancelling download Failed');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        }
+    };
+
+    // Snackbar close handler
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setSnackbarOpen(false);
+    };
+
+    const handleDialogClose = (event, reason) => {
+        if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
+            handleCancelDownload();
+        }
     };
 
     return (
         <div>
             <h2>File List</h2>
-            <button className='download-button' onClick={downloadSelectedFiles} disabled={selectedFiles.length === 0}>
-                <Download/> Download Selected Files
+            <button
+                className='download-button'
+                onClick={downloadSelectedFiles}
+                disabled={selectedFiles.length === 0 || downloading}
+            >
+                <Download/> Convert to Zip And Download Selected Files
             </button>
             {loading ? (
                 <p>Loading initial file list...</p>
@@ -123,11 +272,50 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                             datasetData={fileGroups[projectID].datasets}
                             selectedFiles={selectedFiles}
                             handleFileSelection={handleFileSelection}
+                            onDatasetSelect={handleFileSelection}
                         />
                     ))}
                     {fetchingMore && <p>Loading more files...</p>}
+                    {/* Pagination Button */}
+                    {continuationToken && !fetchingMore && (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={loadMoreFiles}
+                            disabled={fetchingMore}
+                            style={{ marginTop: '20px' }}
+                            endIcon={fetchingMore ? <CircularProgress size={20} color="inherit" /> : null}
+                        >
+                            {fetchingMore ? 'Loading...' : 'Load More Files'}
+                        </Button>
+                    )}
                 </>
             )}
+
+            {/* Download Progress Dialog */}
+            <Dialog open={dialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    Download Progress
+                    <Tooltip title="Cancel download">
+                        <IconButton onClick={handleCancelDownload} style={{ float: 'right' }}>
+                            <Cancel />
+                        </IconButton>
+                    </Tooltip>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="h6" gutterBottom>
+                        Progress: {downloadProgress}%
+                    </Typography>
+                    <LinearProgress variant="determinate" value={downloadProgress} />
+                </DialogContent>
+            </Dialog>
+
+            {/* Snackbar for download status */}
+            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
+                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </div>
     );
 };
