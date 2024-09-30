@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Accordion,
     AccordionSummary,
@@ -11,6 +11,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SectionAccordion from './SectionAccordion';
 
 const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFiles }) => {
+    const [disableChildren, setDisableChildren] = useState(false);
+
     const allFilesInDataset = Object.keys(sectionData).flatMap(sectionNumber => {
         return Object.keys(sectionData[sectionNumber].channels).flatMap(channelName => {
             return sectionData[sectionNumber].channels[channelName].files;
@@ -19,15 +21,17 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
 
     const isDatasetSelected = allFilesInDataset.every(file => selectedFiles.includes(file));
 
-    // function to handle dataset checkbox click
     const handleDatasetSelect = (event) => {
         event.stopPropagation();
+        const isChecked = event.target.checked;
+
         allFilesInDataset.forEach(file => {
             onFileSelect(file, 'folder');
         });
+
+        setDisableChildren(isChecked);
     };
 
-    // function to prevent accordion collapse when clicking the checkbox
     const handleCheckboxClick = (event) => {
         event.stopPropagation();
     };
@@ -54,6 +58,7 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
                             channelData={sectionData[sectionNumber].channels}
                             onFileSelect={onFileSelect}
                             selectedFiles={selectedFiles}
+                            disableChildren={disableChildren}
                         />
                     ))}
                 </Box>

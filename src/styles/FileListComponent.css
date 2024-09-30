@@ -1,5 +1,5 @@
 .download-button {
-    background-color: #4CAF50;
+    background: #343a40;
     border: none;
     color: white;
     padding: 8px 20px;
@@ -11,10 +11,11 @@
     align-items: center;
     gap: 6px;
     transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-bottom: 12px;
 }
 
 .download-button:hover {
-    background-color: #45a049;
+    background-color: #212529;
     transform: translateY(-2px);
 }
 

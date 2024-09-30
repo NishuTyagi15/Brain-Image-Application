@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Accordion,
     AccordionSummary,
@@ -10,18 +10,22 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChannelFiles from './ChannelFiles';
 
-const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, selectedFiles }) => {
+const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, selectedFiles, disableChildren }) => {
+    const [disableChannels, setDisableChannels] = useState(false);
+
     const allFiles = Object.keys(channelData).flatMap(channelName => channelData[channelName].files);
 
     const isSectionSelected = allFiles.every(file => selectedFiles.includes(file));
 
     const handleSectionSelect = (event) => {
         event.stopPropagation();
-        if (isSectionSelected) {
-            allFiles.forEach(file => onFileSelect(file));
-        } else {
-            allFiles.forEach(file => onFileSelect(file));
-        }
+        const isChecked = event.target.checked;
+
+        allFiles.forEach(file => {
+            onFileSelect(file, 'folder');
+        });
+
+        setDisableChannels(isChecked);
     };
 
     return (
@@ -30,7 +34,9 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
                 <div className='file-details'>
                     <Checkbox
                         checked={isSectionSelected}
-                        onClick={handleSectionSelect}
+                        onChange={handleSectionSelect}
+                        onClick={(event) => event.stopPropagation()}
+                        disabled={disableChildren}
                     />
                     <Typography>
                         <strong>Section: {keyIndex + 1}</strong> {sectionNumber}
@@ -46,6 +52,7 @@ const SectionAccordion = ({ sectionNumber, keyIndex, channelData, onFileSelect, 
                             files={channelData[channelName].files}
                             onFileSelect={onFileSelect}
                             selectedFiles={selectedFiles}
+                            disableChildren={disableChannels}
                         />
                     ))}
                 </Box>

@@ -17,7 +17,7 @@ import { fetchDownloadUrl, fetchPreview } from '../../actions/Action';
 import '../../styles/ChannelFiles.css';
 import { splitFileString } from '../../utility/utils';
 
-const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
+const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disableChildren }) => {
     const [previewImage, setPreviewImage] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
 
@@ -69,6 +69,7 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
                                     event.stopPropagation();
                                     onFileSelect(file);
                                 }}
+                                disabled={disableChildren}
                             />
                             <Typography>
                                 <strong>File:</strong> {secondPart}
@@ -91,7 +92,7 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect }) => {
             })}
 
             {/* Dialog for Image Preview */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="lg">
+            <Dialog className='preview-dialog' open={openDialog} onClose={handleCloseDialog} maxWidth="lg">
                 <DialogTitle className='image-preview'>
                     Image Preview
                     <IconButton

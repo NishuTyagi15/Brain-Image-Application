@@ -73,13 +73,13 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     // function to group files by project, dataset, section, and channel
     const groupFiles = (files) => {
         const projects = {};
-        const regex = /(\d{3}-\d-\d{3})\/.*_(S\d{6})_(L\d{2})_(ch\d{2})\.tif/;
-
+        const regex = /(\d{3}-\d-\d{3})\/([^\/]+)\/.*_(S\d{6})_(L\d{2})_(ch\d{2})\.tif/;
+    
         files.forEach((file) => {
             const fetchSplittedData = file.match(regex);
             if (fetchSplittedData) {
-                const [projectID, sectionNumber, datasetName, channelName] = fetchSplittedData.slice(1);
-
+                const [projectID, datasetName, sectionNumber, layer, channelName] = fetchSplittedData.slice(1);
+    
                 // Initializing project structure if it doesn't exist
                 if (!projects[projectID]) {
                     projects[projectID] = { datasets: {} };
@@ -100,7 +100,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                 projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName].files.push(file);
             }
         });
-
+    
         return projects;
     };
 
@@ -243,7 +243,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
 
     return (
         <div>
-            <h2>File List</h2>
+            <h2>Folder Structure</h2>
             <button
                 className='download-button'
                 onClick={downloadSelectedFiles}
@@ -268,16 +268,15 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                     {fetchingMore && <p>Loading more files...</p>}
                     {/* Pagination Button */}
                     {continuationToken && !fetchingMore && (
-                        <Button
-                            variant="contained"
-                            color="secondary"
+                        <button
+                            className='download-button'
                             onClick={loadMoreFiles}
                             disabled={fetchingMore}
                             style={{ marginTop: '20px' }}
                             endIcon={fetchingMore ? <CircularProgress size={20} color="inherit" /> : null}
                         >
                             {fetchingMore ? 'Loading...' : 'Load More Files'}
-                        </Button>
+                        </button>
                     )}
                 </>
             )}

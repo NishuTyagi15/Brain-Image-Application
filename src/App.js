@@ -1,11 +1,12 @@
 import React from 'react';
 import './App.css'
 import FileListComponent from './components/FileComponent/FileListComponent';
+import HeaderAppBar from './components/AppBar/HeaderAppBar';
 
 function App() {
   return (
     <div className="App">
-      <h1>Brain Image Data Download Application</h1>
+      <HeaderAppBar/>
       <FileListComponent />
     </div>
   );
