@@ -16,6 +16,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { fetchDownloadUrl, fetchPreview } from '../../actions/Action';
 import '../../styles/ChannelFiles.css';
 import { splitFileString } from '../../utility/utils';
+import { OpenInNew } from '@mui/icons-material';
 
 const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disableChildren }) => {
     const [previewImage, setPreviewImage] = useState(null);
@@ -95,6 +96,16 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disable
             <Dialog className='preview-dialog' open={openDialog} onClose={handleCloseDialog} maxWidth="lg">
                 <DialogTitle className='image-preview'>
                     Image Preview
+                    <Tooltip title="Open In New Tab">
+                        <IconButton
+                            aria-label="close"
+                            onClick={handleEnlarge}
+                            style={{ position: 'absolute', right: 40, top: 8 }}
+                            className='close-icon'
+                        >
+                            <OpenInNew />
+                        </IconButton>
+                    </Tooltip>
                     <IconButton
                         aria-label="close"
                         onClick={handleCloseDialog}
@@ -109,14 +120,14 @@ const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, disable
                         <img src={previewImage} alt="Preview" style={{ width: '100%', maxHeight: '550px', objectFit: 'contain' }} />
                     )}
                 </DialogContent>
-                <DialogActions>
+                {/* <DialogActions>
                     <Button className='cancel-button' onClick={handleCloseDialog} color="primary">
                         Cancel
                     </Button>
                     <Button className='enlarge-button' onClick={handleEnlarge} color="primary">
                         Open In New Tab
                     </Button>
-                </DialogActions>
+                </DialogActions> */}
             </Dialog>
         </div>
     );
