@@ -30,12 +30,13 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList, datasetSel
     const loadMoreFiles = async () => {
         setSelectedFiles([]);
         if (!continuationToken) return;
-
+    
         setFetchingMore(true);
         try {
             const newList = await fetchFileList(fetchPrefixData, continuationToken);
             if (newList?.keys) {
-                updateFileList(newList.keys);
+                // Append new keys to the existing fileListData
+                updateFileList([...fileListData, ...newList.keys]);
             }
             if (newList?.nextContinuationToken) {
                 setContinuationToken(newList.nextContinuationToken);
@@ -47,7 +48,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList, datasetSel
         } finally {
             setFetchingMore(false);
         }
-    };
+    };    
 
     // function to fetch the initial file list data
     const fetchFileListData = async () => {

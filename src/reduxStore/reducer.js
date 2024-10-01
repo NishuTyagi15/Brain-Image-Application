@@ -17,7 +17,7 @@ const dataReducer = (state = initialState, action) => {
         case UPDATE_FILE_LIST_DATA:
             return {
                 ...state,
-                fileListData: action.payload
+                fileListData: [...state.fileListData, ...action.payload]
             };
         case DATA_SET_SELECTED:
             return {
