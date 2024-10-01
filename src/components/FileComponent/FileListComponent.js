@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { cancelDownloading, fetchDownloadStatus, fetchDownloadUrl, fetchFileList, fetchZipDownloadEtag } from '../../actions/Action';
-import { FileLists, updateFileList } from '../../reduxStore/actions';
+import { FileLists, datasetSelectionStatus, sectionSelectStatus, updateFileList } from '../../reduxStore/actions';
 import '../../styles/FileListComponent.css';
 import ProjectAccordion from '../Accordions/ProjectAccordion';
 import { Download, Cancel } from '@mui/icons-material';
-import { LinearProgress, Button, CircularProgress, Typography, Snackbar, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, Alert } from '@mui/material';
+import { LinearProgress, Button, CircularProgress, Typography, Snackbar, Dialog, DialogTitle, DialogContent, Alert } from '@mui/material';
 import { splitFileString } from '../../utility/utils';
 
-const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
+const FileListComponent = ({ fileListData, FileLists, updateFileList, datasetSelectionStatus, sectionSelectStatus, fetchPrefixData }) => {
     const [loading, setLoading] = useState(false);
     const [fetchingMore, setFetchingMore] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -22,7 +22,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [refId, setRefId] = useState(null);
     const [zipKey, setZipKey] = useState(null);
-    const [isCanceled, setIsCanceled] = useState(false);    
+    const [isCanceled, setIsCanceled] = useState(false);
 
     let pollingInterval;
 
@@ -33,7 +33,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
 
         setFetchingMore(true);
         try {
-            const newList = await fetchFileList(continuationToken);
+            const newList = await fetchFileList(fetchPrefixData, continuationToken);
             if (newList?.keys) {
                 updateFileList(newList.keys);
             }
@@ -53,7 +53,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     const fetchFileListData = async () => {
         setLoading(true);
         try {
-            const response = await fetchFileList();
+            const response = await fetchFileList(fetchPrefixData);
             FileLists(response?.keys);
             if (response?.nextContinuationToken) {
                 setContinuationToken(response.nextContinuationToken);
@@ -68,36 +68,45 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
     // useEffect to fetch file list data when the component mounts
     useEffect(() => {
         fetchFileListData();
-    }, []);
+    }, [fetchPrefixData]);
 
     // function to group files by project, dataset, section, and channel
     const groupFiles = (files) => {
         const projects = {};
-        const regex = /(\d{3}-\d-\d{3})\/([^\/]+)\/.*_(S\d{6})_(L\d{2})_(ch\d{2})\.tif/;
-    
+        const regex = /([^\/]+)\/([^\/]+)\/([^\/]+)\/(.*_S\d+_L\d+_ch\d+)\.\w+$/;
+
         files.forEach((file) => {
             const fetchSplittedData = file.match(regex);
             if (fetchSplittedData) {
-                const [projectID, datasetName, sectionNumber, layer, channelName] = fetchSplittedData.slice(1);
-    
-                // Initializing project structure if it doesn't exist
-                if (!projects[projectID]) {
-                    projects[projectID] = { datasets: {} };
+                const [, , projectID, datasetName, fileName] = fetchSplittedData;
+
+                // Extract section and channel from the fileName
+                const sectionMatch = fileName.match(/_S(\d+)_/);
+                const channelMatch = fileName.match(/_ch(\d+)/);
+
+                const sectionNumber = sectionMatch ? `S${sectionMatch[1]}` : null;
+                const channelName = channelMatch ? `ch${channelMatch[1]}` : null;
+
+                if (sectionNumber && channelName) {
+                    // Initializing project structure if it doesn't exist
+                    if (!projects[projectID]) {
+                        projects[projectID] = { datasets: {} };
+                    }
+                    // Create dataset structure if it doesn't exist
+                    if (!projects[projectID].datasets[datasetName]) {
+                        projects[projectID].datasets[datasetName] = { sections: {} };
+                    }
+                    // Create section structure if it doesn't exist
+                    if (!projects[projectID].datasets[datasetName].sections[sectionNumber]) {
+                        projects[projectID].datasets[datasetName].sections[sectionNumber] = { channels: {} };
+                    }
+                    // Initializing the channel structure if it doesn't exist
+                    if (!projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName]) {
+                        projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName] = { files: [] };
+                    }
+                    // Push the file into the channel's files array
+                    projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName].files.push(file);
                 }
-                // Create dataset structure if it doesn't exist
-                if (!projects[projectID].datasets[datasetName]) {
-                    projects[projectID].datasets[datasetName] = { sections: {} };
-                }
-                // Create section structure if it doesn't exist
-                if (!projects[projectID].datasets[datasetName].sections[sectionNumber]) {
-                    projects[projectID].datasets[datasetName].sections[sectionNumber] = { channels: {} };
-                }
-                // Initializing the channel structure if it doesn't exist
-                if (!projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName]) {
-                    projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName] = { files: [] };
-                }
-                // Pushing the file into the channel's files array
-                projects[projectID].datasets[datasetName].sections[sectionNumber].channels[channelName].files.push(file);
             }
         });
     
@@ -122,11 +131,11 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
         setDownloading(true);
         setDownloadProgress(0);
         setDialogOpen(true);
-    
+
         let selectedFilesData = null;
         let folderPrefix = null;
         let zipFileName = `Sample-${Math.random().toString().slice(2, 6)}.zip`;
-    
+
         // Step 1: Process based on selection type
         if (selectionType === 'folder') {
             selectedFilesData = splitFileString(selectedFiles[0]);
@@ -134,7 +143,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
         } else {
             selectedFilesData = selectedFiles;
         }
-    
+
         try {
             // Step 2: Call API to get etags for selected files or folders
             const zipConversionResponse = await fetchZipDownloadEtag({
@@ -143,14 +152,14 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                 files: selectedFilesData,
                 zipFileName,
             });
-        
+
             // Step 3: If a direct download URL is provided in the response, download the file immediately
             if (zipConversionResponse?.url) {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = zipConversionResponse.url;
                 downloadLink.download = zipFileName;
                 downloadLink.click();
-    
+
                 setSnackbarMessage('Download started');
                 handleSuccess();
             } else {
@@ -163,11 +172,11 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
                     }
                     try {
                         const statusResponse = await fetchDownloadStatus(zipConversionResponse.ref);
-    
+
                         const { uploadProgress, status, key } = statusResponse;
                         setDownloadProgress(uploadProgress);
                         setZipKey(key);
-    
+
                         if (status.toLowerCase() === 'completed') {
                             handleSuccess();
                             setSnackbarMessage('Downloading started');
@@ -194,7 +203,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
             handleCancel();
         }
         setSelectedFiles([]);
-    };    
+    };
 
     const handleCancel = () => {
         clearInterval(pollingInterval);
@@ -202,6 +211,8 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
         setDialogOpen(false);
+        datasetSelectionStatus(false);
+        sectionSelectStatus(false);
     }
 
     const handleSuccess = () => {
@@ -210,6 +221,8 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
         setDialogOpen(false);
+        datasetSelectionStatus(false);
+        sectionSelectStatus(false);
     }
 
     // Cancel the download by calling the cancel API
@@ -268,13 +281,13 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
             {fetchingMore && <CircularProgress />}
             {!fetchingMore && continuationToken && (
                 <button
-                className='download-button'
-                onClick={loadMoreFiles}
-                disabled={fetchingMore}
-                style={{ marginTop: '20px' }}
-            >
-                Load More Files
-            </button>
+                    className='download-button'
+                    onClick={loadMoreFiles}
+                    disabled={fetchingMore}
+                    style={{ marginTop: '20px' }}
+                >
+                    Load More Files
+                </button>
             )}
             <Snackbar
                 open={snackbarOpen}
@@ -314,6 +327,7 @@ const FileListComponent = ({ fileListData, FileLists, updateFileList }) => {
 
 const mapStateToProps = (state) => ({
     fileListData: state.fileListData,
+    fetchPrefixData: state.fetchPrefixData
 });
 
-export default connect(mapStateToProps, { FileLists, updateFileList })(FileListComponent);
+export default connect(mapStateToProps, { FileLists, updateFileList, datasetSelectionStatus, sectionSelectStatus })(FileListComponent);

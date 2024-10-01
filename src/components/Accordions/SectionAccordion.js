@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Accordion,
     AccordionSummary,
@@ -65,4 +65,4 @@ const mapStateToProps = (state) => ({
     datasetSelected: state.datasetSelected,
 });
 
-export default connect(mapStateToProps, {sectionSelectStatus})(SectionAccordion);
+export default connect(mapStateToProps, { sectionSelectStatus })(SectionAccordion);

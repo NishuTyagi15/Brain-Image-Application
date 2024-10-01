@@ -1,9 +1,10 @@
-import { DATA_SET_SELECTED, FILE_LIST_DATA, SECTION_SELECTED, UPDATE_FILE_LIST_DATA } from "../utility/ActionConstants";
+import { DATA_SET_SELECTED, FETCH_PREFIX_DATA, FILE_LIST_DATA, SECTION_SELECTED, UPDATE_FILE_LIST_DATA } from "../utility/ActionConstants";
 
 const initialState = {
     fileListData: [],
     datasetSelected: false,
-    sectionSelected: false
+    sectionSelected: false,
+    fetchPrefixData: ''
 };
 
 const dataReducer = (state = initialState, action) => {
@@ -27,6 +28,11 @@ const dataReducer = (state = initialState, action) => {
             return {
                 ...state,
                 sectionSelected: action.payload
+            };
+        case FETCH_PREFIX_DATA:
+            return {
+                ...state,
+                fetchPrefixData: action.payload
             };
         default:
             return state;

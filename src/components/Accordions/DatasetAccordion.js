@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Accordion,
     AccordionSummary,
@@ -30,7 +30,7 @@ const DatasetAccordion = ({ datasetName, sectionData, onFileSelect, selectedFile
             onFileSelect(file, 'folder');
         });
 
-        datasetSelectionStatus(isChecked)
+        datasetSelectionStatus(isChecked);
     };
 
     return (

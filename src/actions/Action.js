@@ -1,11 +1,11 @@
 import axios from "axios";
 
 // function to fetch the list of files, optionally using a continuation token for pagination
-export const fetchFileList = async (continuationToken) => {
+export const fetchFileList = async (prefix, continuationToken) => {
   try {
     const baseUrl = 'https://d7n70bd1mi.execute-api.us-east-1.amazonaws.com/sample/files';
     const params = {
-      prefix: 'ACT-001/001-0-001/40019_SBIR_AD_Aim_4_1_WTM_40019_HETM_40029_103119/',
+      prefix
     };
 
     if (continuationToken) {

@@ -5,19 +5,17 @@ import {
     IconButton,
     Tooltip,
     Dialog,
-    DialogActions,
     DialogContent,
-    DialogTitle,
-    Button
+    DialogTitle
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import { fetchDownloadUrl, fetchPreview } from '../../actions/Action';
 import '../../styles/ChannelFiles.css';
-import { splitFileString } from '../../utility/utils';
 import { OpenInNew } from '@mui/icons-material';
 import { connect } from 'react-redux';
+import { splitFileString } from '../../utility/utils';
 
 const ChannelFiles = ({ channelName, files, selectedFiles, onFileSelect, datasetSelected, sectionSelected }) => {
     const [previewImage, setPreviewImage] = useState(null);
